@@ -235,10 +235,11 @@ namespace SimpleWeb {
       Request(std::size_t max_request_streambuf_size, const std::shared_ptr<Connection> &connection_) noexcept
           : streambuf(new asio::streambuf(max_request_streambuf_size)), content_streambuf(max_request_streambuf_size), connection(connection_), content(content_streambuf) {}
       Request(std::size_t max_request_streambuf_size, const std::shared_ptr<Connection> &connection_, std::unique_ptr<asio::streambuf> &&previous_streambuf) noexcept
-          : streambuf(std::move(previous_streambuf)), content_streambuf(max_request_streambuf_size), connection(connection_), content(content_streambuf) {
-      }
+          : streambuf(std::move(previous_streambuf)), content_streambuf(max_request_streambuf_size), connection(connection_), content(content_streambuf) {}
 
     public:
+      std::shared_ptr<void> userp;
+
       std::string method, path, query_string, http_version;
 
       Content content;
@@ -354,6 +355,7 @@ namespace SimpleWeb {
     public:
       Session(std::size_t max_request_streambuf_size, std::shared_ptr<Connection> connection_) noexcept
           : connection(std::move(connection_)), request(new Request(max_request_streambuf_size, connection)) {}
+
       Session(std::size_t max_request_streambuf_size, std::shared_ptr<Connection> connection_, std::unique_ptr<asio::streambuf> &&previous_streambuf) noexcept
           : connection(std::move(connection_)), request(new Request(max_request_streambuf_size, connection, std::move(previous_streambuf))) {}
 
@@ -808,12 +810,14 @@ namespace SimpleWeb {
                 return;
               else if(case_insensitive_equal(it->second, "keep-alive")) {
                 auto new_session = std::make_shared<Session>(this->config.max_request_streambuf_size, response->session->connection, std::move(response->session->request->streambuf));
+                new_session->request->userp = std::move(response->session->request->userp);
                 this->read(new_session);
                 return;
               }
             }
             if(response->session->request->http_version >= "1.1") {
               auto new_session = std::make_shared<Session>(this->config.max_request_streambuf_size, response->session->connection, std::move(response->session->request->streambuf));
+              new_session->request->userp = std::move(response->session->request->userp);
               this->read(new_session);
               return;
             }
