@@ -17,7 +17,7 @@ namespace SimpleWeb {
 
   public:
     /// Match condition for asio::read_until to match both standard and non-standard HTTP header endings.
-    std::pair<asio::buffers_iterator<asio::const_buffers_1>, bool> operator()(asio::buffers_iterator<asio::const_buffers_1> begin, asio::buffers_iterator<asio::const_buffers_1> end) {
+    std::pair<asio::buffers_iterator<const_buffer>, bool> operator()(asio::buffers_iterator<const_buffer> begin, asio::buffers_iterator<const_buffer> end) {
       auto it = begin;
       for(; it != end; ++it) {
         if(*it == '\n') {
@@ -72,11 +72,11 @@ namespace SimpleWeb {
       friend class ClientBase<socket_type>;
 
     public:
-      std::size_t size() noexcept {
+      std::size_t size() const noexcept {
         return streambuf.size();
       }
       /// Convenience function to return content as a string.
-      std::string string() noexcept {
+      std::string string() const noexcept {
         return std::string(asio::buffers_begin(streambuf.data()), asio::buffers_end(streambuf.data()));
       }
 
